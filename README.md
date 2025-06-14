@@ -116,23 +116,13 @@ Use `--force` to overwrite existing files, or you'll be prompted.
 
 ---
 
-## 🔧 Customizing Stubs
-
-Want to modify the stub templates? Just publish them:
-
-```bash
-php artisan vendor:publish --tag=process-stubs
-```
-
----
-
 ## 🧪 Testing
 
 The package includes full feature testing using:
 
-* ✅ [PestPHP](https://pestphp.com)
-* 🔁 [Mockery](https://github.com/mockery/mockery)
-* 🧪 [Orchestra Testbench](https://github.com/orchestral/testbench)
+* ✅ PestPHP
+* 🔁 Mockery
+* 🧪 Orchestra Testbench
 
 Run tests with:
 
@@ -158,7 +148,3 @@ Tests cover:
 ## ⚖️ License
 
 MIT License — free to use, modify, and distribute.
-
-```
-
----
