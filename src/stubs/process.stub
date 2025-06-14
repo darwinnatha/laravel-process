@@ -1,0 +1,12 @@
+<?php
+
+namespace {{ namespace }};;
+
+use DarwinNatha\Process\AbstractProcess;
+
+class {{ class }} extends AbstractProcess
+{
+    public array $tasks = [
+        // Tasks\SomeTask::class,
+    ];
+}
