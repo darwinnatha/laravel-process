@@ -113,27 +113,6 @@ Missing folders are automatically created and **capitalized properly**.
 
 Use `--force` to overwrite existing files, or you'll be prompted.
 
----
-
-## 📁 Folder Structure
-
-```
-src/
-├── Commands/
-│   ├── MakeProcessCommand.php
-│   └── MakeTaskCommand.php
-├── Contracts/
-│   ├── ProcessInterface.php
-│   └── TaskInterface.php
-├── Exceptions/
-│   └── ProcessException.php
-├── Traits/
-│   └── ProcessorTrait.php
-├── stubs/
-│   ├── process.stub
-│   └── task.stub
-└── ProcessServiceProvider.php
-```
 
 ---
 
