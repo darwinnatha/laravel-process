@@ -14,7 +14,7 @@ Please follow the guidelines below to help us keep this project clean, consisten
 ```bash
    git clone https://github.com/darwinnatha/laravel-process.git
    cd laravel-process
-````
+```
 
 3. Install dependencies:
 

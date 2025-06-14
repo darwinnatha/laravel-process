@@ -19,8 +19,13 @@ It lets you structure your business logic as **processes** composed of **tasks**
 
 ## 📦 Installation
 
+> Note: The package name (`darwinnatha/laravel-process`) matches the repository name for clarity.
+
 ```bash
-composer require darwinnatha/process
+composer require darwinnatha/laravel-process
+````markdown
+```
+```
 ````
 
 ---
