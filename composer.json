@@ -1,5 +1,5 @@
 {
-  "name": "darwinnatha/laravel-processor",
+  "name": "darwinnatha/laravel-process",
   "description": "Un micro-package Laravel basé sur le pattern pipeline-task pour les processus métier séquentiels.",
   "type": "library",
   "license": "MIT",
