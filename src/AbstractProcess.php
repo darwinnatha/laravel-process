@@ -31,6 +31,7 @@ abstract class AbstractProcess
             $message = $result['message'] ?? 'Process completed successfully';
             unset($result['message']);
             if (isset($result['code']) && $result['code'] >= 400) {
+                DB::rollBack();
                 return ResponseFormatter::formatException(new \Exception($message), true);
             }
             

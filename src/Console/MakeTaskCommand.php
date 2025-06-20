@@ -14,13 +14,22 @@ class MakeTaskCommand extends Command
     public function handle(): int
     {
         $name = $this->argument('name') ?? $this->ask('Nom de la classe Task (ex: DetermineUser)');
-        $group = $this->option('group') ?? $this->ask('Nom du groupe (ex: Auth ou Request/DO)', 'Common');
+        $group = $this->option('group');
 
-        $className = Str::studly($name);
-        $namespace = 'App\\Processes\\' . str_replace('/', '\\', trim($group, '/')) . '\\Tasks';
-        $path = app_path('Processes/' . $group . "/Tasks/$className.php");
+        // Extraire le nom de classe du chemin complet si nécessaire
+        $className = $this->extractClassName($name);
+        
+        // Si pas de groupe spécifié, utiliser directement le dossier Processes/Tasks
+        if (empty($group)) {
+            $namespace = 'App\\Processes\\Tasks';
+            $path = app_path("Processes/Tasks/$className.php");
+        } else {
+            $formattedGroup = $this->formatGroupPath($group);
+            $namespace = 'App\\Processes\\' . str_replace('/', '\\', $formattedGroup) . '\\Tasks';
+            $path = app_path('Processes/' . $formattedGroup . "/Tasks/$className.php");
+        }
 
-        $stub = $this->getStub('process');
+        $stub = $this->getStub('task');
         $content = $this->populateStub($stub,[
             'namespace' => $namespace,
             'class' => $className
@@ -69,5 +78,18 @@ class MakeTaskCommand extends Command
         }
 
         return $stub;
+    }
+
+    protected function extractClassName(string $name): string
+    {
+        // Si le nom contient des slashes, prendre seulement la dernière partie
+        if (str_contains($name, '/')) {
+            $parts = explode('/', $name);
+            $className = end($parts);
+        } else {
+            $className = $name;
+        }
+        
+        return Str::studly($className);
     }
 }

@@ -9,6 +9,11 @@ use Mockery;
 
 class TaskFailureRollbackTest extends TestCase
 {
+    protected function setupDatabaseMocks(): void
+    {
+        // Ne pas faire de mocks par défaut, ce test définit les siens
+    }
+
     public function test_failed_task_rolls_back_transaction()
     {
         DB::shouldReceive('beginTransaction')->once();

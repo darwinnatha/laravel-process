@@ -15,13 +15,20 @@ class MakeProcessCommand extends Command implements Isolatable
     public function handle(): mixed
     {
         $name = $this->argument('name') ?? $this->ask('Nom de la classe de Process (ex: LoginProcess)');
-        $group = $this->option('group') ?? $this->ask('Nom du groupe (ex: Auth ou Request/DO)', 'Common');
+        $group = $this->option('group');
 
-        $className = Str::studly($name);
-        $namespace = 'App\\Processes\\' . str_replace('/', '\\', trim($group, '/'));
-        $formattedGroup = $this->formatGroupPath($group);
-        $namespace = 'App\\Processes\\' . str_replace('/', '\\', $formattedGroup);
-        $path = app_path('Processes/' . $formattedGroup . "/$className.php");
+        // Extraire le nom de classe du chemin complet si nécessaire
+        $className = $this->extractClassName($name);
+        
+        // Si pas de groupe spécifié, utiliser directement le dossier Processes
+        if (empty($group)) {
+            $namespace = 'App\\Processes';
+            $path = app_path("Processes/$className.php");
+        } else {
+            $formattedGroup = $this->formatGroupPath($group);
+            $namespace = 'App\\Processes\\' . str_replace('/', '\\', $formattedGroup);
+            $path = app_path('Processes/' . $formattedGroup . "/$className.php");
+        }
         
         $stub = $this->getStub('process');
         $content = $this->populateStub($stub,[
@@ -72,6 +79,19 @@ class MakeProcessCommand extends Command implements Isolatable
         }
 
         return $stub;
+    }
+
+    protected function extractClassName(string $name): string
+    {
+        // Si le nom contient des slashes, prendre seulement la dernière partie
+        if (str_contains($name, '/')) {
+            $parts = explode('/', $name);
+            $className = end($parts);
+        } else {
+            $className = $name;
+        }
+        
+        return Str::studly($className);
     }
 
 }
