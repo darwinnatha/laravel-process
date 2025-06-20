@@ -5,7 +5,7 @@ namespace {{ namespace }};
 use Illuminate\Http\Request;
 use DarwinNatha\Process\Contracts\TaskInterface;
 
-class {{ class }} implements TaskInterface
+final readonly class {{ class }} implements TaskInterface
 {
     public function __invoke(Request $request, callable $next): mixed
     {

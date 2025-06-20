@@ -32,13 +32,13 @@ abstract class AbstractProcess
             unset($result['message']);
             if (isset($result['code']) && $result['code'] >= 400) {
                 DB::rollBack();
-                return ResponseFormatter::formatException(new \Exception($message), true);
+                return ResponseFormatter::formatException(new \Exception($message), config('app.debug') ?? false);
             }
-            
+
             return ResponseFormatter::formatSuccess($result, $message);
         } catch (Throwable $e) {
             DB::rollBack();
-            return ResponseFormatter::formatException($e);
+            return ResponseFormatter::formatException($e, config('app.debug') ?? false);
         }
     }
 }
