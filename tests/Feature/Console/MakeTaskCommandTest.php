@@ -18,7 +18,7 @@ class MakeTaskCommandTest extends TestCase
     public function test_it_creates_a_task_file()
     {
         $this->artisan('make:task', ['name' => 'LoginTask', '--group' => 'Auth'])
-            ->expectsOutput('✅ Task [LoginTask] created successfully in [' . app_path('Processes/Auth/Tasks/LoginTask.php') . ']')
+            ->expectsOutput('✅ Task [LoginTask] created successfully at: app/Processes/Auth/Tasks/LoginTask.php')
             ->assertExitCode(0);
 
         $this->assertTrue(File::exists(app_path('Processes/Auth/Tasks/LoginTask.php')));
@@ -27,7 +27,7 @@ class MakeTaskCommandTest extends TestCase
     public function test_it_creates_directory_if_not_exists()
     {
         $this->artisan('make:task', ['name' => 'CustomTask', '--group' => 'NewGroup'])
-            ->expectsOutput('✅ Task [CustomTask] created successfully in [' . app_path('Processes/NewGroup/Tasks/CustomTask.php') . ']')
+            ->expectsOutput('✅ Task [CustomTask] created successfully at: app/Processes/NewGroup/Tasks/CustomTask.php')
             ->assertExitCode(0);
 
         $this->assertDirectoryExists(app_path('Processes/NewGroup/Tasks'));
@@ -52,7 +52,7 @@ class MakeTaskCommandTest extends TestCase
         File::put($path, "// dummy content");
 
         $this->artisan('make:task', ['name' => 'LoginTask', '--group' => 'Auth', '--force' => true])
-            ->expectsOutput('✅ Task [LoginTask] created successfully in [' . app_path('Processes/Auth/Tasks/LoginTask.php') . ']')
+            ->expectsOutput('✅ Task [LoginTask] created successfully at: app/Processes/Auth/Tasks/LoginTask.php')
             ->assertExitCode(0);
     }
 

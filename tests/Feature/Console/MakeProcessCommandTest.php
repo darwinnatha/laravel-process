@@ -18,7 +18,7 @@ class MakeProcessCommandTest extends TestCase
     public function test_it_creates_a_process_file()
     {
         $this->artisan('make:process', ['name' => 'RegisterProcess', '--group' => 'Auth'])
-            ->expectsOutput('✅ Process [RegisterProcess] created successfully in [' . app_path('Processes/Auth/RegisterProcess.php') . ']')
+            ->expectsOutput('✅ Process [RegisterProcess] created successfully at: app/Processes/Auth/RegisterProcess.php')
             ->assertExitCode(0);
 
         $this->assertTrue(File::exists(app_path('Processes/Auth/RegisterProcess.php')));
@@ -43,7 +43,7 @@ class MakeProcessCommandTest extends TestCase
         File::put($path, "// existing");
 
         $this->artisan('make:process', ['name' => 'RegisterProcess', '--group' => 'Auth', '--force' => true])
-            ->expectsOutput('✅ Process [RegisterProcess] created successfully in [' . app_path('Processes/Auth/RegisterProcess.php') . ']')
+            ->expectsOutput('✅ Process [RegisterProcess] created successfully at: app/Processes/Auth/RegisterProcess.php')
             ->assertExitCode(0);
     }
 

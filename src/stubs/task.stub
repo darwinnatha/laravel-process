@@ -2,15 +2,22 @@
 
 namespace {{ namespace }};
 
-use Illuminate\Http\Request;
+use DarwinNatha\Process\Support\ProcessPayload;
 use DarwinNatha\Process\Contracts\TaskInterface;
+use Illuminate\Http\Request;
 
 final readonly class {{ class }} implements TaskInterface
 {
-    public function __invoke(Request $request, callable $next): mixed
+    /**
+     * Exécute la tâche avec ProcessPayload (méthode principale)
+     */
+    public function __invoke(ProcessPayload $payload, callable $next): mixed
     {
         // Your logic here
+        // Accès aux données : $payload->get('key'), $payload['key'], $payload->key
+        // Modifier les données : $payload->set('key', 'value'), $payload['key'] = 'value'
+        // Métadonnées : $payload->getSource(), $payload->getMetadata()
 
-        return $next($request);
+        return $next($payload);
     }
 }

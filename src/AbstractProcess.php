@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DarwinNatha\Process;
 
+use DarwinNatha\Process\Support\ProcessPayload;
 use DarwinNatha\Process\Support\ResponseFormatter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -14,17 +15,19 @@ abstract class AbstractProcess
 {
     /**
      * @var array<int,string|class-string>
-     */
+     */ 
     public array $tasks = [];
 
     /**
+     * Point d'entrée principal avec ProcessPayload
+     * 
      * @throws Throwable
      */
-    public function handle(Request $request): array
+    public function execute(ProcessPayload $payload): array
     {
         DB::beginTransaction();
         try {
-            $result = Pipeline::send($request)
+            $result = Pipeline::send($payload)
                 ->through($this->tasks)
                 ->thenReturn();
             DB::commit();
@@ -40,5 +43,16 @@ abstract class AbstractProcess
             DB::rollBack();
             return ResponseFormatter::formatException($e, config('app.debug') ?? false);
         }
+    }
+
+    /**
+     * Méthode de compatibilité avec Request (deprecated)
+     * 
+     * @deprecated Utilisez execute(ProcessPayload) à la place
+     * @throws Throwable
+     */
+    public function handle(Request $request): array
+    {
+        return $this->execute(ProcessPayload::fromRequest($request));
     }
 }

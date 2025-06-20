@@ -9,25 +9,39 @@ use Symfony\Component\Console\Input\InputOption;
 
 class MakeProcessCommand extends Command implements Isolatable
 {
-    protected $signature = 'make:process {name?} {--group=} {--force}';
-    protected $description = 'Create a new process class';
+    protected $signature = 'make:process {name? : Le nom de la classe ou le chemin complet (ex: Auth/LoginProcess)} {--group= : Groupe optionnel (remplacé par le chemin si fourni)} {--force : Force la création même si le fichier existe}';
+    protected $description = 'Create a new process class. Supports path notation: Auth/LoginProcess creates LoginProcess in Auth namespace';
 
     public function handle(): mixed
     {
-        $name = $this->argument('name') ?? $this->ask('Nom de la classe de Process (ex: LoginProcess)');
+        $name = $this->argument('name') ?? $this->ask('Nom de la classe de Process (ex: LoginProcess ou Auth/LoginProcess)');
         $group = $this->option('group');
 
-        // Extraire le nom de classe du chemin complet si nécessaire
-        $className = $this->extractClassName($name);
+        // Si le nom contient des slashes, on extrait le groupe automatiquement
+        if (str_contains($name, '/')) {
+            $parts = explode('/', trim($name, '/'));
+            $className = array_pop($parts); // Dernière partie = nom de classe
+            $detectedGroup = implode('/', $parts); // Le reste = groupe
+            
+            // Si --group est fourni, il a priorité, sinon on utilise le groupe détecté
+            $finalGroup = $group ?? $detectedGroup;
+        } else {
+            $className = $name;
+            $finalGroup = $group;
+        }
         
-        // Si pas de groupe spécifié, utiliser directement le dossier Processes
-        if (empty($group)) {
+        $className = Str::studly($className);
+        
+        // Si pas de groupe final, créer directement dans Processes
+        if (empty($finalGroup)) {
             $namespace = 'App\\Processes';
             $path = app_path("Processes/$className.php");
+            $relativePath = "app/Processes/$className.php";
         } else {
-            $formattedGroup = $this->formatGroupPath($group);
+            $formattedGroup = $this->formatGroupPath($finalGroup);
             $namespace = 'App\\Processes\\' . str_replace('/', '\\', $formattedGroup);
             $path = app_path('Processes/' . $formattedGroup . "/$className.php");
+            $relativePath = "app/Processes/$formattedGroup/$className.php";
         }
         
         $stub = $this->getStub('process');
@@ -49,7 +63,7 @@ class MakeProcessCommand extends Command implements Isolatable
 
         file_put_contents($path, $content);
         
-        $this->info("✅ Process [$className] created successfully in [$path]");
+        $this->info("✅ Process [$className] created successfully at: $relativePath");
         return self::SUCCESS;
     }
 
@@ -79,19 +93,6 @@ class MakeProcessCommand extends Command implements Isolatable
         }
 
         return $stub;
-    }
-
-    protected function extractClassName(string $name): string
-    {
-        // Si le nom contient des slashes, prendre seulement la dernière partie
-        if (str_contains($name, '/')) {
-            $parts = explode('/', $name);
-            $className = end($parts);
-        } else {
-            $className = $name;
-        }
-        
-        return Str::studly($className);
     }
 
 }

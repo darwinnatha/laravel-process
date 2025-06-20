@@ -8,25 +8,39 @@ use Symfony\Component\Console\Input\InputOption;
 
 class MakeTaskCommand extends Command
 {
-    protected $signature = 'make:task {name?} {--group=} {--force}';
-    protected $description = 'Create a new task class';
+    protected $signature = 'make:task {name? : Le nom de la classe ou le chemin complet (ex: Auth/DetermineUser)} {--group= : Groupe optionnel (remplacé par le chemin si fourni)} {--force : Force la création même si le fichier existe}';
+    protected $description = 'Create a new task class. Supports path notation: Auth/DetermineUser creates DetermineUser in Auth/Tasks namespace';
 
     public function handle(): int
     {
-        $name = $this->argument('name') ?? $this->ask('Nom de la classe Task (ex: DetermineUser)');
+        $name = $this->argument('name') ?? $this->ask('Nom de la classe Task (ex: DetermineUser ou Auth/DetermineUser)');
         $group = $this->option('group');
 
-        // Extraire le nom de classe du chemin complet si nécessaire
-        $className = $this->extractClassName($name);
+        // Si le nom contient des slashes, on extrait le groupe automatiquement
+        if (str_contains($name, '/')) {
+            $parts = explode('/', trim($name, '/'));
+            $className = array_pop($parts); // Dernière partie = nom de classe
+            $detectedGroup = implode('/', $parts); // Le reste = groupe
+            
+            // Si --group est fourni, il a priorité, sinon on utilise le groupe détecté
+            $finalGroup = $group ?? $detectedGroup;
+        } else {
+            $className = $name;
+            $finalGroup = $group;
+        }
         
-        // Si pas de groupe spécifié, utiliser directement le dossier Processes/Tasks
-        if (empty($group)) {
+        $className = Str::studly($className);
+        
+        // Si pas de groupe final, créer directement dans Processes/Tasks
+        if (empty($finalGroup)) {
             $namespace = 'App\\Processes\\Tasks';
             $path = app_path("Processes/Tasks/$className.php");
+            $relativePath = "app/Processes/Tasks/$className.php";
         } else {
-            $formattedGroup = $this->formatGroupPath($group);
+            $formattedGroup = $this->formatGroupPath($finalGroup);
             $namespace = 'App\\Processes\\' . str_replace('/', '\\', $formattedGroup) . '\\Tasks';
             $path = app_path('Processes/' . $formattedGroup . "/Tasks/$className.php");
+            $relativePath = "app/Processes/$formattedGroup/Tasks/$className.php";
         }
 
         $stub = $this->getStub('task');
@@ -48,7 +62,7 @@ class MakeTaskCommand extends Command
         
         file_put_contents($path, $content);
 
-        $this->info("✅ Task [$className] created successfully in [$path]");
+        $this->info("✅ Task [$className] created successfully at: $relativePath");
         return self::SUCCESS;
     }
 
@@ -78,18 +92,5 @@ class MakeTaskCommand extends Command
         }
 
         return $stub;
-    }
-
-    protected function extractClassName(string $name): string
-    {
-        // Si le nom contient des slashes, prendre seulement la dernière partie
-        if (str_contains($name, '/')) {
-            $parts = explode('/', $name);
-            $className = end($parts);
-        } else {
-            $className = $name;
-        }
-        
-        return Str::studly($className);
     }
 }
