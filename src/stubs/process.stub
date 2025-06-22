@@ -2,7 +2,7 @@
 
 namespace {{ namespace }};
 
-use DarwinNatha\Process\AbstractProcess;
+use App\Processes\AbstractProcess;
 
 class {{ class }} extends AbstractProcess
 {

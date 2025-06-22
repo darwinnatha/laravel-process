@@ -1,0 +1,83 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Pipeline;
+use Throwable;
+
+
+abstract class AbstractProcess
+{
+    /**
+     * @var array<int,string|class-string>
+     */ 
+    public array $tasks = [];
+
+    /**
+     * Handle the incoming input (any type).
+     * 
+     * @param mixed $input
+     * @return mixed
+     * @throws Throwable
+     */
+    public function handle(mixed $input): mixed
+    {
+        // Example: Add logging
+        // Log::info('Process started', ['process' => static::class, 'input_type' => get_debug_type($input)]);
+
+        DB::beginTransaction();
+        try {
+            $result = Pipeline::send($input)
+                ->through($this->tasks)
+                ->thenReturn();
+                
+            DB::commit();
+
+            // Example: Add success logging
+            // Log::info('Process completed successfully', ['process' => static::class]);
+            
+            return $result;
+            
+        } catch (Throwable $e) {
+            DB::rollBack();
+            
+            // Example: Add error logging
+            // Log::error('Process failed', ['process' => static::class, 'error' => $e->getMessage()]);
+            
+            throw $e;
+        }
+    }
+
+    /**
+     * Example method: Add input validation
+     * 
+     * protected function validateInput(mixed $input): void
+     * {
+     *     // Custom validation logic
+     * }
+     */
+
+    /**
+     * Example method: Add middleware support
+     * 
+     * protected function getMiddleware(): array
+     * {
+     *     return [
+     *         // Middleware classes
+     *     ];
+     * }
+     */
+
+    /**
+     * Example method: Add caching
+     * 
+     * protected function getCacheKey(mixed $input): ?string
+     * {
+     *     // Return cache key or null to disable caching
+     *     return null;
+     * }
+     */
+}

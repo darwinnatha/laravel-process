@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace DarwinNatha\Process;
 
-use DarwinNatha\Process\Support\ProcessPayload;
-use DarwinNatha\Process\Support\ResponseFormatter;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Pipeline;
 use Throwable;
@@ -19,40 +16,25 @@ abstract class AbstractProcess
     public array $tasks = [];
 
     /**
-     * Point d'entrée principal avec ProcessPayload
+     * Handle the incoming input (any type).
      * 
+     * @param mixed $input - Array, Object, Collection, Request, DTO, etc.
+     * @return mixed
      * @throws Throwable
      */
-    public function execute(ProcessPayload $payload): array
+    public function handle(mixed $input): mixed
     {
         DB::beginTransaction();
         try {
-            $result = Pipeline::send($payload)
+            $result = Pipeline::send($input)
                 ->through($this->tasks)
                 ->thenReturn();
             DB::commit();
-            $message = $result['message'] ?? 'Process completed successfully';
-            unset($result['message']);
-            if (isset($result['code']) && $result['code'] >= 400) {
-                DB::rollBack();
-                return ResponseFormatter::formatSuccess($result, $message);
-            }
-
-            return ResponseFormatter::formatSuccess($result, $message);
+            
+            return $result;
         } catch (Throwable $e) {
             DB::rollBack();
-            return ResponseFormatter::formatException($e, config('app.debug') ?? false);
+            throw $e;
         }
-    }
-
-    /**
-     * Méthode de compatibilité avec Request (deprecated)
-     * 
-     * @deprecated Utilisez execute(ProcessPayload) à la place
-     * @throws Throwable
-     */
-    public function handle(Request $request): array
-    {
-        return $this->execute(ProcessPayload::fromRequest($request));
     }
 }

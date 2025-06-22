@@ -64,7 +64,7 @@ class NewFeaturesTest extends TestCase
         $content = File::get(app_path('Processes/Auth/Tasks/DetermineUser.php'));
         $this->assertStringContainsString('namespace App\Processes\Auth\Tasks;', $content);
         $this->assertStringContainsString('class DetermineUser implements TaskInterface', $content);
-        $this->assertStringContainsString('ProcessPayload $payload', $content);
+        $this->assertStringContainsString('mixed $input', $content);
     }
 
     public function test_process_without_group_goes_to_root()

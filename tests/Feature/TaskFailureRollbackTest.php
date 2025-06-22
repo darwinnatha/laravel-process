@@ -20,21 +20,27 @@ class TaskFailureRollbackTest extends TestCase
         DB::shouldReceive('rollBack')->once();
         DB::shouldReceive('commit')->never();
 
-        $failingTask = Mockery::mock();
-        $failingTask->shouldReceive('__invoke')->andThrow(new \RuntimeException('Task failed'));
+        $failingTask = new class {
+            public function __invoke(mixed $input, callable $next) {
+                throw new \RuntimeException('Task failed');
+            }
+        };
 
         $process = new class($failingTask) extends \DarwinNatha\Process\AbstractProcess {
             public function __construct(public $fail) {}
             public array $tasks;
 
-            public function handle(Request $request): array
+            public function handle(mixed $input): mixed
             {
                 $this->tasks = [$this->fail];
-                return parent::handle($request);
+                return parent::handle($input);
             }
         };
 
-        $data = $process->handle(new Request(['name' => 'fail']));
-        $this->assertIsArray($data);
+        // Maintenant le process lance l'exception au lieu de retourner un tableau formaté
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Task failed');
+        
+        $process->handle(new Request(['name' => 'fail']));
     }
 }

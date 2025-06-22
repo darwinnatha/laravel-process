@@ -4,6 +4,7 @@ namespace DarwinNatha\Process;
 
 use DarwinNatha\Process\Console\MakeProcessCommand;
 use DarwinNatha\Process\Console\MakeTaskCommand;
+use DarwinNatha\Process\Console\PublishProcessCommand;
 use Illuminate\Support\ServiceProvider;
 
 class ProcessServiceProvider extends ServiceProvider
@@ -14,6 +15,7 @@ class ProcessServiceProvider extends ServiceProvider
             $this->commands([
                 MakeProcessCommand::class,
                 MakeTaskCommand::class,
+                PublishProcessCommand::class,
             ]);
         }
     }

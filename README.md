@@ -1,25 +1,32 @@
 # Laravel Process
 
-A lightweight and elegant pipeline-based process orchestration package for Laravel.  
-It lets you structure your business logic as **processes** composed of **tasks**, with built-in error handling, automatic transactions, and a consistent return format.
+A **completely flexible** and **customizable** process orchestration package for Laravel.  
+Structure your business logic as **processes** composed of **tasks** with **total control** over the base implementation.
+
+---
+
+## ✨ Key Philosophy
+
+**Ultimate Flexibility** - **Publish and customize everything**:
+- 📥 **Universal Input** - Accept any type: Arrays, Objects, Collections, Requests, DTOs, etc.
+- 📤 **Universal Output** - Return any type: Boolean, Array, DTO, Resource, Collection, null, etc.
+- 🎛️ **Customizable Base Class** - Publish AbstractProcess and modify it as needed
+- 🚀 **Zero Constraints** - No forced patterns, complete developer freedom
 
 ---
 
 ## ✨ Features
 
-- Organize logic into **processes** and **tasks**
-- Leverages Laravel's `Pipeline` for task chaining
-- Automatically handles **transactions** and **error catching**
-- Unified response structure: `code`, `status`, `message`, `data`
-- Artisan commands to generate **process** and **task** classes
-- Stub-based generation for easy customization
-- `ProcessorTrait` for seamless controller integration
+- **Publishable Base Class** - Customize AbstractProcess to your needs
+- **Universal Input/Output** - `mixed` types for maximum flexibility  
+- **Pipeline-Based** - Leverages Laravel's `Pipeline` for task chaining
+- **Automatic Transactions** - Built-in DB transaction handling with rollback
+- **Optional API Formatting** - Use `FormatsApiResponse` trait when needed
+- **Artisan Commands** - Generate processes and tasks easily
 
 ---
 
 ## 📦 Installation
-
-> Note: The package name (`darwinnatha/laravel-process`) matches the repository name for clarity.
 
 ```bash
 composer require darwinnatha/laravel-process
@@ -27,114 +34,233 @@ composer require darwinnatha/laravel-process
 
 ---
 
+## 🚀 Quick Start
+
+### 1. Publish the AbstractProcess (Recommended)
+
+```bash
+php artisan process:publish
+```
+
+This creates `app/Processes/AbstractProcess.php` that you can customize:
+- Add logging, monitoring, caching
+- Modify transaction handling  
+- Add middleware or custom validation
+- Implement your error handling strategy
+
+### 2. Create a Process
+
+```bash
+php artisan make:process CreateUserProcess --group=User
+```
+
+### 3. Create Tasks
+
+```bash
+php artisan make:task ValidateUserData --group=User
+php artisan make:task SaveUserToDatabase --group=User
+```
+
+---
+
 ## 🧠 How It Works
 
-A **Process** is a class that chains a set of **Tasks** using Laravel’s pipeline.
+After publishing, your **AbstractProcess** becomes completely yours to customize. All processes extend from **your** base class.
 
-### Example: LoginProcess
+### Example: Customized AbstractProcess
 
 ```php
-namespace App\Processes\Auth;
+// app/Processes/AbstractProcess.php
+abstract class AbstractProcess
+{
+    public array $tasks = [];
 
-class LoginProcess extends AbstractProcess
+    public function handle(mixed $input): mixed
+    {
+        // Your custom logging
+        Log::info('Process started', ['process' => static::class]);
+
+        // Your custom validation
+        $this->validateInput($input);
+
+        // Your custom transaction handling
+        DB::beginTransaction();
+        try {
+            $result = Pipeline::send($input)
+                ->through($this->getMiddleware())  // Your middleware
+                ->through($this->tasks)
+                ->thenReturn();
+                
+            DB::commit();
+            
+            // Your custom success handling
+            $this->onSuccess($result);
+            return $result;
+            
+        } catch (Throwable $e) {
+            DB::rollBack();
+            
+            // Your custom error handling
+            $this->onError($e);
+            throw $e;
+        }
+    }
+
+    // Your custom methods
+    protected function validateInput(mixed $input): void { /* ... */ }
+    protected function getMiddleware(): array { return []; }
+    protected function onSuccess(mixed $result): void { /* ... */ }
+    protected function onError(Throwable $e): void { /* ... */ }
+}
+```
+
+### Example: Your Process
+
+```php
+namespace App\Processes\User;
+
+use App\Processes\AbstractProcess;  // Your custom base class
+
+class CreateUserProcess extends AbstractProcess
 {
     public array $tasks = [
-        Tasks\DetermineUser::class,
-        Tasks\GenerateToken::class,
-        Tasks\FinalizeLogin::class,
+        Tasks\ValidateUserData::class,
+        Tasks\SaveUserToDatabase::class,
+        Tasks\SendWelcomeEmail::class,
     ];
 }
 ```
 
-Each **Task** is a single-purpose class that implements `__invoke(Request $request, Closure $next)`.
+### Example: Flexible Task
 
 ```php
-final class DetermineUser
+final class ValidateUserData implements TaskInterface
 {
-    public function __invoke(Request $request, Closure $next): mixed
+    public function __invoke(mixed $input, callable $next): mixed
     {
-        $user = User::where('phone_number', $request->phone_number)->first();
+        // Handle any input type
+        $data = match(true) {
+            $input instanceof Request => $input->validated(),
+            is_array($input) => $input,
+            is_object($input) => (array) $input,
+            default => throw new InvalidArgumentException('Unsupported input')
+        };
 
-        if (! $user) {
-            return [
-                'code' => 404,
-                'status' => 'error',
-                'message' => 'User not found',
-            ];
+        // Your validation logic
+        if (!$this->isValid($data)) {
+            throw new ValidationException('Invalid data');
         }
 
-        $request->merge(['user_id' => $user->id]);
-
-        return $next($request);
+        return $next($input);
     }
 }
 ```
 
 ---
 
-## 🧰 Using a Process in Controllers
+## 🚀 Usage Examples
 
-Use the `ProcessorTrait` to cleanly run a process and handle the response:
+### With Different Input Types
 
 ```php
-use DarwinNatha\Process\Traits\ProcessorTrait;
+$process = new CreateUserProcess();
 
-class AuthController extends Controller
-{
-    use ProcessorTrait;
+// With an array
+$result = $process->handle(['name' => 'John', 'email' => 'john@test.com']);
 
-    public function login(LoginRequest $request)
-    {
-        [$code, $result] = $this->runProcess(LoginProcess::class, $request);
-        return response()->json($result, $code);
-    }
-}
+// With a Request
+$result = $process->handle($request);
+
+// With a DTO  
+$result = $process->handle($userDto);
+
+// With any custom object
+$result = $process->handle($customObject);
 ```
 
 ---
 
-## ⚙️ Generate Classes
+## 🎛️ Optional API Response Formatting
 
-Create a process or a task with:
+If you want standardized API responses, use the **optional** `FormatsApiResponse` trait:
 
-```bash
-php artisan make:process LoginProcess --group=Auth
-php artisan make:task DetermineUser --group=Auth
+```php
+use DarwinNatha\Process\Traits\FormatsApiResponse;
+
+final class CreateUserTask implements TaskInterface
+{
+    use FormatsApiResponse; // Optional!
+
+    public function __invoke(mixed $input, callable $next): mixed
+    {
+        try {
+            $user = User::create($this->extractData($input));
+            return $this->created($user, 'User created successfully');
+        } catch (Exception $e) {
+            return $this->error('User creation failed', ['error' => $e->getMessage()]);
+        }
+    }
+}
 ```
 
-> If `--group` or `--name` is not passed, the command will interactively ask for the values.
+**This is completely optional** - by default, return whatever you want!
 
-This creates:
+---
 
-* `app/Processes/Auth/LoginProcess.php`
-* `app/Processes/Auth/Tasks/DetermineUser.php`
+## ⚙️ Commands
 
-Missing folders are automatically created and **capitalized properly**.
+### Publish AbstractProcess
+```bash
+php artisan process:publish          # Publish for customization
+php artisan process:publish --force  # Overwrite existing
+```
 
-Use `--force` to overwrite existing files, or you'll be prompted.
+### Generate Classes
+```bash
+php artisan make:process LoginProcess --group=Auth
+php artisan make:task ValidateCredentials --group=Auth
+```
 
+---
 
+## 🎯 Advanced Customization Examples
+
+### Add Caching to Your AbstractProcess
+
+```php
+public function handle(mixed $input): mixed
+{
+    $cacheKey = $this->getCacheKey($input);
+    
+    if ($cacheKey && Cache::has($cacheKey)) {
+        return Cache::get($cacheKey);
+    }
+    
+    $result = $this->executeProcess($input);
+    
+    if ($cacheKey) {
+        Cache::put($cacheKey, $result, $this->getCacheTtl());
+    }
+    
+    return $result;
+}
+```
 ---
 
 ## 🧪 Testing
 
-The package includes full feature testing using:
-
-* ✅ PestPHP
-* 🔁 Mockery
-* 🧪 Orchestra Testbench
-
-Run tests with:
+Run tests:
 
 ```bash
 vendor/bin/pest
 ```
 
-Tests cover:
-
-* Process execution and flow
-* Task chaining and modification
-* Console command behavior and file generation
+The package includes comprehensive tests covering:
+* AbstractProcess publication and customization
+* Flexible input/output handling
+* Different data types (arrays, objects, DTOs, Requests)
+* Transaction rollback on failures
+* Console command generation
 
 ---
 

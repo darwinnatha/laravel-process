@@ -2,17 +2,14 @@
 
 namespace DarwinNatha\Process\Contracts;
 
-use DarwinNatha\Process\Support\ProcessPayload;
-use Illuminate\Http\Request;
-
 interface TaskInterface
 {
     /**
-     * Exécute la tâche sur le payload et la passe au prochain middleware.
+     * Exécute la tâche sur n'importe quel type de données
      *
-     * @param  ProcessPayload  $payload
+     * @param  mixed  $input - Array, Object, Collection, Request, DTO, etc.
      * @param  callable  $next
      * @return mixed
      */
-    public function __invoke(ProcessPayload $payload, callable $next): mixed;
+    public function __invoke(mixed $input, callable $next): mixed;
 }

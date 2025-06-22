@@ -2,22 +2,35 @@
 
 namespace {{ namespace }};
 
-use DarwinNatha\Process\Support\ProcessPayload;
 use DarwinNatha\Process\Contracts\TaskInterface;
-use Illuminate\Http\Request;
 
 final readonly class {{ class }} implements TaskInterface
 {
     /**
-     * Exécute la tâche avec ProcessPayload (méthode principale)
+     * Exécute la tâche - accepte n'importe quel type d'entrée
+     * 
+     * @param mixed $input - Array, Object, Collection, Request, ProcessPayload, etc.
+     * @param callable $next
+     * @return mixed - Retourne le type que vous voulez
      */
-    public function __invoke(ProcessPayload $payload, callable $next): mixed
+    public function __invoke(mixed $input, callable $next): mixed
     {
-        // Your logic here
-        // Accès aux données : $payload->get('key'), $payload['key'], $payload->key
-        // Modifier les données : $payload->set('key', 'value'), $payload['key'] = 'value'
-        // Métadonnées : $payload->getSource(), $payload->getMetadata()
-
-        return $next($payload);
+        // Exemples d'utilisation selon le type d'entrée :
+        
+        // Si vous recevez un array :
+        // $input['key'] = 'new_value';
+        
+        // Si vous recevez un Request :
+        // $data = $input->validated();
+        
+        // Si vous recevez un ProcessPayload :
+        // $input->set('key', 'value');
+        
+        // Si vous recevez un DTO/objet :
+        // $input->property = 'new_value';
+        
+        // Votre logique métier ici...
+        
+        return $next($input);
     }
 }
