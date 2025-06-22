@@ -8,9 +8,11 @@ class ResponseFormatter
 {
      public static function formatSuccess(mixed $data, string $message = 'Process completed'): array
     {
+        $code = $data['code'];
+        unset($data['code']);
         return [
-            'code' => 200,
-            'status' => 'success',
+            'code' => $code,
+            'status' => $code >= 400 ? 'error' : 'success',
             'message' => $message,
             'data' => $data,
         ];
